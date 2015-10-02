@@ -1,2 +1,2 @@
 # Kai
-Kai Wather project Ardunio code
+Kai Wather Project Ardunio Code
