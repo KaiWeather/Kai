@@ -1,25 +1,22 @@
 #ifndef Sensors_h
 #define Sensors_h
+//#include "Sensors.cpp"
+#include <WString.h>
 
-class senslib
+
+class senspac
 {
 public:
-	void update(int htu,int htuh, int dts, int R);
+	void update(float atemp,float wtemp, float humid, float rfall, float wspd, float wdir, int wdeb, int wflow);
+	int wind_speed();
+	int wind_direction();
 	void print();
-	void csv();
-	//Sensor Helper functions
-	void ambient_temp(int htu);
-	void water_temp(int dts);
-	void humidity(int htuh);
-	void rain_fall(int R);
-	void wind_speed();
-	void wind_direction();
-	int wind_dir_lookup();
-	void water_depth();
-	void water_flow();
-	//Setup Bool to see what is attached
-	bool ATEMP_A; // Ambient Temperature or HUMID Attached?
-	bool WTEMP_A; // Water Temperature Attached?
+	String csv();
+
+	int rain();
+
+	int location;
+	//char data[];
 
 private:
 	//Each output Sensor readings

@@ -11,6 +11,9 @@
 // UART Serial Communication speed
 #define BAUDRATE 9600
 
+//Wait Config times .. will update and sync if wifi is enabled
+#define PUSH_DEFAULT 1 // how often to update the sensors and send out
+#define UPDATE_DEFAULT 5 // how often to check for any new updates from server
 /*========================
   ██╗    ██╗██╗███████╗██╗
   ██║    ██║██║██╔════╝██║
@@ -25,7 +28,7 @@
 // 0: default php push data mode
 // 1: Run each test utillity
 
-//#define WIFI 0
+#define WIFI
 
 #ifdef WIFI
 	//CC3000 pin config
@@ -43,22 +46,28 @@
 	#define CC3000_MISO  50
 	#define CC3000_MOSI  51
 
-	// Wifi network Settings
+	// Wifi network Settings.
 	#define WLAN_SSID       "SSID"
 	#define WLAN_PASS       "PASS"
+	#define WLAN_SECURITY   WLAN_SEC_WEP
 
 	//Pick you Wifi encryption
 	//#define WLAN_SECURITY   WLAN_SEC_UNSEC
 	//#define WLAN_SECURITY   WLAN_SEC_WEP
 	//#define WLAN_SECURITY   WLAN_SEC_WPA
-	#define WLAN_SECURITY   WLAN_SEC_WPA2
+	//#define WLAN_SECURITY   WLAN_SEC_WPA2
 
 	//Timeout for server connection
 	#define IDLE_TIMEOUT_MS  3000
+	#define SYNC_OFFSET 1 // estimate offset for the device
 
 	//Website Access
 	#define WEBSITE      "WEBSITE"
-	#define WEBPAGE      "WEBPAGE/push.php"
+	#define WEBPAGE      "/Page/Dir/"
+	#define PUSH         "push.php?"
+	#define AUTH		 "auth={token}"
+	#define TIME         "/Page/Dir/time.php?s=0"
+	#define CHECK_LINK   "/Page/Dir/update.php?s=0"
 
 #endif
 
@@ -85,7 +94,17 @@
 	 * 1 : API Enable
 	 * 2 : API Enable with escaped control characters
 	 */
-	#define XBEE_API 0
+	#define XBEE_API 2
+
+	//Coordinator: Main XBEE Mac address
+	#define COORDINATOR_SH 0x00000000
+	#define COORDINATOR_SL 0x00000000
+
+	#define XBEE_MODE 0
+	/* 0 : Base Station
+	 * 1 : Node
+	 */
+	#define XBEE_TIMEOUT 5000
 
 #endif
 
@@ -112,7 +131,11 @@
 
 //Include any custom sensors here
 
-
+//debug
+#define OK_PIN 22
+#define PUSH_PIN 23
+#define CONNECTING 24
+#define FAIL 26
 
 
 #endif
