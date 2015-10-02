@@ -12,8 +12,9 @@
 #define BAUDRATE 9600
 
 //Wait Config times .. will update and sync if wifi is enabled
-#define PUSH_DEFAULT 1 // how often to update the sensors and send out
-#define UPDATE_DEFAULT 5 // how often to check for any new updates from server
+#define PUSH_DEFAULT 15 // how often to update the sensors and send out
+#define UPDATE_DEFAULT 1 // how often to check for any new updates from server
+#define SYNC_DEFAULT_HOUR 1 //How ofter the time will be sync
 /*========================
   ██╗    ██╗██╗███████╗██╗
   ██║    ██║██║██╔════╝██║
@@ -81,7 +82,7 @@
   ================================*/
 
 //Uncomment to enable XBEE Module
-//#define XBEE
+#define XBEE
 
 #ifdef XBEE
 
@@ -106,7 +107,7 @@
 	 */
 	#define XBEE_DATA_LEN 2
 
-	#define XBEE_CHECK 15 //min how often the XBEE will check for incomming connections.
+	#define XBEE_CHECK 5 //min how often the XBEE will check for incomming connections.
 	#define XBEE_TIMEOUT 5000
 
 #endif

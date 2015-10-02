@@ -12,10 +12,12 @@ public:
 	int wind_direction();
 	void print();
 	String csv();
+	String csv(int pos);
 
 	int rain();
 
 	int location;
+	int csvlen;
 	//char data[];
 
 private:

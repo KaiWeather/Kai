@@ -41,7 +41,8 @@
 	XBee xbee = XBee();
 
 	typedef struct XBeeStruct {
-		int val[XBEE_DATA_LEN][2];//[type,value]
+		int val1;//[XBEE_DATA_LEN][2];//[type,value]
+		int val2;
 		int location;
 	} XBeeDataStruct;
 
@@ -103,6 +104,7 @@ void rainIRQ()
 	raininterval = raintime - rainlast;
 	if (raininterval > 10) 
 	{
+		Serial.print("RAIN");
 		dailyrainin += 2794; //0.2794; // mm of rain
 		//dailyrainin += 0.011; //Each dump is 0.011" of water
 		rainlast = raintime; // set up for next event
@@ -120,7 +122,7 @@ int rain_fall()
 		float WSValue;
 		WSValue = analogRead(WIND_SPEED)*(5.0/ 1023.0);
 		WSValue -= 0.4;
-		if (WSValue > 0.04) // Adjust to remove false inputs while idle
+		if (WSValue > 0.02) // Adjust to remove false inputs while idle
 		{
 		WSValue /= 0.049382716;//(2-0.4)/32.4 = 0.049382716
 		}
@@ -241,7 +243,7 @@ void updatesensors()
 		char linkBuf[link.length()+1];
 		link.toCharArray(linkBuf, sizeof(linkBuf));
 
-		//Serial.println(link);
+		Serial.println(link);
 		//Serial.println(linkBuf);
 
 		Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80);
@@ -531,12 +533,12 @@ void updatesensors()
 		}
 	}
 
-	void XBEE_ATTACH(int val1,int type1,int val2,int type2, int loc)//,int val3,int val4,int val5,int val6,int val7,int val8,int loc)
+	void XBEE_ATTACH(int val1, int val2, int loc)//,int val3,int val4,int val5,int val6,int val7,int val8,int loc)
 	{
-		XBeeData.val[0][1] = val1;
-		XBeeData.val[0][0] = type1;
-		XBeeData.val[1][1] = val2;
-		XBeeData.val[0][0] = type2;
+		XBeeData.val1 = val1;
+		//XBeeData.val[0][0] = type1;
+		XBeeData.val2 = val2;
+		//XBeeData.val[0][0] = type2;
 		/*XBeeData.val[2] = val3;
 		XBeeData.val[3] = val4;
 		XBeeData.val[4] = val5;
@@ -550,6 +552,8 @@ void updatesensors()
 	{
 		String data = String("");
 		//print out each sensor data
+
+	/*
 		for(int x = 0; x < XBEE_DATA_LEN; x++)
 		{
 			if(data.length() > 2)
@@ -558,7 +562,19 @@ void updatesensors()
 				data += String(XBeeData.location) + "," + XBeeData.val[x][0] +"," + XBeeData.val[0][1];
 			}
 		}
-		//Serial.println(data);
+	*/
+		if(XBeeData.val1 != -404)
+			if(XBeeData.val2 != -404)
+				data = String(XBeeData.location) + ",1," + XBeeData.val1 + "," + String(XBeeData.location) +",6," + XBeeData.val2;
+			else
+				data = String(XBeeData.location) + ",1," + XBeeData.val1;
+		else
+			if(XBeeData.val2 != -404)
+				data = String(XBeeData.location) +",6," + XBeeData.val2;
+			else
+				data = "";
+
+		Serial.println(data);
 		return data;
 	}
 
@@ -643,7 +659,7 @@ void setup(void)
 		//xbee.setSerial(Serial1);
 		Serial2.begin(9600);
 		xbee.setSerial(Serial2);
-		XBEE_ATTACH(-404,0,-404,0,0);
+		XBEE_ATTACH(-404,-404,0);
 		delay(5000); //Wait for Xbee to fully initalize
 		digitalWrite(CONNECTING, LOW);
 		Serial.println(F("\nInitializing complete..."));
@@ -747,11 +763,11 @@ void loop() {
 		//currenttime();
 		lastsecond += 1000; // 1 second
 		sec++;
+		SEND_ALLOW = true;
 		if(sec >= 60)
 		{
 			sec=0;
 			min++;
-			SEND_ALLOW = true;
 			UPDATE_ALLOW = true;
 			SYNC_ALLOW = true;
 			XBEE_CHECK_ALLOW = true;
@@ -769,7 +785,8 @@ void loop() {
 	}
 
 	//Check when to update each sensor
-	if(min%PUSH_INT == 0 && sec == 0 && SEND_ALLOW == true)
+	//if(min%PUSH_INT == 0 && sec == 0 && SEND_ALLOW == true)
+	if(sec%PUSH_INT == 0 && SEND_ALLOW == true)
 	{
 		digitalWrite(PUSH_PIN, HIGH);
 		currenttime();
@@ -780,7 +797,16 @@ void loop() {
 		
 		#ifdef WIFI
 			//Serial.println(sen.csv());
-			push(sen.csv());
+			//String csv = sen.csv();
+			for(int x = 0; x < 3; x++)
+			{
+				//Serial.print(csv);
+				String csv = sen.csv(x);
+				if(csv.length() > 2)
+				{
+					push(csv);
+				}
+			}
 		#else
 			sen.print();
 		#endif
@@ -800,26 +826,34 @@ void loop() {
 
 
 	#ifdef WIFI
-		if(min%UPDATE_INT == 0 && sec == 0 && UPDATE_ALLOW == true)
+		//if(min%UPDATE_INT == 0 && sec == 0 && UPDATE_ALLOW == true)
+		if(sec%UPDATE_INT == 0 && UPDATE_ALLOW == true)
 		{
 			UPDATE_ALLOW = false;
 			update();
 		}
 
-		if(sec == 0 && min == 0 && hour == 0 && SYNC_ALLOW == true)
+		if(sec == 0 && min == 0 && hour%SYNC_DEFAULT_HOUR == 0 && SYNC_ALLOW == true)
 		{
 			SYNC_ALLOW = false;
-			sync();
+			//sync();
 		}
 	#endif
 
 	#ifdef XBEE
-		if(min%XBEE_CHECK == 0 && sec == 0 && XBEE_CHECK_ALLOW == true)
+		//if(min%XBEE_CHECK == 0 && sec == 0 && XBEE_CHECK_ALLOW == true)
+		if(sec == 30 && XBEE_CHECK_ALLOW == true)
 		{
 			XBEE_CHECK_ALLOW = false;
 			XBEE_RECV();
-			push(XBEE_CSV());			
-			XBEE_ATTACH(-404,0,-404,0,0);
+			//Serial.print(csv);
+			String xcsv = XBEE_CSV();
+			Serial.print(xcsv);
+			if(xcsv.length() > 2)
+			{
+				push(xcsv);	
+			}		
+			XBEE_ATTACH(-404,-404,0);
 		}
 	#endif
 }
