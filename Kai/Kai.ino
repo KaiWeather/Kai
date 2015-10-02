@@ -41,7 +41,7 @@
 	XBee xbee = XBee();
 
 	typedef struct XBeeStruct {
-		int val[8];
+		int val[XBEE_DATA_LEN][2];//[type,value]
 		int location;
 	} XBeeDataStruct;
 
@@ -85,6 +85,7 @@ int day=0,hour=0,min=0,sec=0;
 bool SEND_ALLOW = true;
 bool UPDATE_ALLOW = true;
 bool SYNC_ALLOW = true;
+bool XBEE_CHECK_ALLOW = true;
 
 #ifdef RAIN_FALL
 #include <PinChangeInt.h>
@@ -176,13 +177,13 @@ int rain_fall()
 #endif
 
 void error(int code) { // OUTPUTS a LED to indicate error
-	//digitalWrite(OK_PIN, LOW);
+	digitalWrite(OK_PIN, LOW);
 
 	for(int i=0;i<= code;i++)
 	{
-		//digitalWrite(FAIL, HIGH);
+		digitalWrite(FAIL, HIGH);
 		delay(100);
-		//digitalWrite(FAIL, LOW);
+		digitalWrite(FAIL, LOW);
 	}
 }
 void currenttime()
@@ -233,7 +234,7 @@ void updatesensors()
 
 	int push(String data)
 	{
-		//digitalWrite(CONNECTING, HIGH);
+		digitalWrite(CONNECTING, HIGH);
 		Serial.print("Pushing Data ... ");
 		String link = String(WEBPAGE) + String(PUSH) + String(AUTH) + String("&data=") + String(data) ;
 
@@ -241,7 +242,7 @@ void updatesensors()
 		link.toCharArray(linkBuf, sizeof(linkBuf));
 
 		//Serial.println(link);
-		Serial.println(linkBuf);
+		//Serial.println(linkBuf);
 
 		Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80);
 		if (www.connected()) {
@@ -275,12 +276,12 @@ void updatesensors()
 		www.close();
 
 		Serial.println("Push Complete");
-		//digitalWrite(CONNECTING, LOW);
+		digitalWrite(CONNECTING, LOW);
 		return 0;
 	}
 
 	int sync() {
-		//digitalWrite(CONNECTING, HIGH);
+		digitalWrite(CONNECTING, HIGH);
 		Serial.println("Preparing to sync device");
 
 		Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80);
@@ -319,13 +320,13 @@ void updatesensors()
 		currenttime();
 
 		Serial.println("Syncing Complete");
-		//digitalWrite(CONNECTING, LOW);
+		digitalWrite(CONNECTING, LOW);
 		return 0;
 	}
 
 	int update() // will check and update the basic parameters
 	{
-		//digitalWrite(CONNECTING, HIGH);
+		digitalWrite(CONNECTING, HIGH);
 		Serial.println("updating new parameters for the device");
 
 		Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80);
@@ -377,7 +378,7 @@ void updatesensors()
 		}
 
 		Serial.println("Update Complete");
-		//digitalWrite(CONNECTING, LOW);
+		digitalWrite(CONNECTING, LOW);
 		return 0;
 
 	}
@@ -530,16 +531,18 @@ void updatesensors()
 		}
 	}
 
-	void XBEE_ATTACH(int val1,int val2,int val3,int val4,int val5,int val6,int val7,int val8,int loc)
+	void XBEE_ATTACH(int val1,int type1,int val2,int type2, int loc)//,int val3,int val4,int val5,int val6,int val7,int val8,int loc)
 	{
-		XBeeData.val[0] = val1;
-		XBeeData.val[1] = val2;
-		XBeeData.val[2] = val3;
+		XBeeData.val[0][1] = val1;
+		XBeeData.val[0][0] = type1;
+		XBeeData.val[1][1] = val2;
+		XBeeData.val[0][0] = type2;
+		/*XBeeData.val[2] = val3;
 		XBeeData.val[3] = val4;
 		XBeeData.val[4] = val5;
 		XBeeData.val[5] = val6;
 		XBeeData.val[6] = val7;
-		XBeeData.val[7] = val8;
+		XBeeData.val[7] = val8;*/
 		XBeeData.location = loc;
 	}
 
@@ -547,29 +550,13 @@ void updatesensors()
 	{
 		String data = String("");
 		//print out each sensor data
-		if(XBeeData.val[0] != -404) {
-			data += String(XBeeData.location) + ",0," + XBeeData.val[0];
-		}
-		if(XBeeData.val[1] != -404) {
-			data += ',' + String(XBeeData.location) + ",1," + XBeeData.val[1];
-		}
-		if(XBeeData.val[2] != -404) {
-			data += ',' + String(XBeeData.location) + ",2," + XBeeData.val[2];
-		}
-		if(XBeeData.val[3] != -404) {
-			data += ',' + String(XBeeData.location) + ",3," + XBeeData.val[3];
-		}
-		if(XBeeData.val[4] != -404) {
-			data += ',' + String(XBeeData.location) + ",4," + XBeeData.val[4];
-		}
-		if(XBeeData.val[5] != -404) {
-			data += ',' + String(XBeeData.location) + ",5," + XBeeData.val[5];
-		}
-		if(XBeeData.val[6] != -404) {
-			data += ',' + String(XBeeData.location) + ",6," + XBeeData.val[6];
-		}
-		if(XBeeData.val[7] != -404) {
-			data += ',' + String(XBeeData.location) + ",7," + XBeeData.val[7];
+		for(int x = 0; x < XBEE_DATA_LEN; x++)
+		{
+			if(data.length() > 2)
+				data += ",";
+			if(XBeeData.val[x][1] != -404) {
+				data += String(XBeeData.location) + "," + XBeeData.val[x][0] +"," + XBeeData.val[0][1];
+			}
 		}
 		//Serial.println(data);
 		return data;
@@ -638,7 +625,7 @@ void setup(void)
 	pinMode(CONNECTING, OUTPUT );
 	pinMode(FAIL, OUTPUT );
 
-	//digitalWrite(OK_PIN, HIGH);
+	digitalWrite(OK_PIN, HIGH);
 
 	//Setup the serial line
 	#ifdef SERIAL_PORT
@@ -651,13 +638,14 @@ void setup(void)
 	//setup XBEE
 	#ifdef XBEE
 		Serial.println(F("\nInitializing xbee..."));
-		//digitalWrite(CONNECTING, HIGH);
-		Serial1.begin(9600);
-		xbee.setSerial(Serial1);
-		//Serial2.begin(9600);
-		//xbee.setSerial(Serial2);
+		digitalWrite(CONNECTING, HIGH);
+		//Serial1.begin(9600);
+		//xbee.setSerial(Serial1);
+		Serial2.begin(9600);
+		xbee.setSerial(Serial2);
+		XBEE_ATTACH(-404,0,-404,0,0);
 		delay(5000); //Wait for Xbee to fully initalize
-		//digitalWrite(CONNECTING, LOW);
+		digitalWrite(CONNECTING, LOW);
 		Serial.println(F("\nInitializing complete..."));
 	#endif
 
@@ -665,7 +653,7 @@ void setup(void)
 	#ifdef WIFI
 		/* Initialise the module */
 		Serial.println(F("\nInitializing wifi..."));
-		//digitalWrite(CONNECTING, HIGH);
+		digitalWrite(CONNECTING, HIGH);
 
 		if (!cc3000.begin())
 		{
@@ -710,7 +698,7 @@ void setup(void)
 		Serial.print(replies); Serial.println(F(" replies"));
 		*/
 		sync();
-		//digitalWrite(CONNECTING, LOW);
+		digitalWrite(CONNECTING, LOW);
 
 	#endif
 
@@ -741,17 +729,17 @@ void setup(void)
 		sensors.setResolution(Temp_0, 12);
 	#endif
 	Serial.println("INIT Complete");
-	//digitalWrite(OK_PIN, HIGH);
+	digitalWrite(OK_PIN, HIGH);
 	lastsecond = millis();
 }
 
 void loop() {
 
-	#ifdef XBEE
+	//#ifdef XBEE
 		//Serial.print(XBEE_MAC());
 		//XBEE_ND();
 		//while(1);
-	#endif
+	//#endif
 
 	//maintain clock
 	if(millis() - lastsecond >= 1000)//wait for 1 second to pass by
@@ -765,7 +753,8 @@ void loop() {
 			min++;
 			SEND_ALLOW = true;
 			UPDATE_ALLOW = true;
-			SYNC_ALLOW == true;
+			SYNC_ALLOW = true;
+			XBEE_CHECK_ALLOW = true;
 			if(min >= 60)
 			{
 				min=0;
@@ -782,7 +771,7 @@ void loop() {
 	//Check when to update each sensor
 	if(min%PUSH_INT == 0 && sec == 0 && SEND_ALLOW == true)
 	{
-		//digitalWrite(PUSH_PIN, HIGH);
+		digitalWrite(PUSH_PIN, HIGH);
 		currenttime();
 		SEND_ALLOW = false;
 		//updates the sensor data
@@ -806,7 +795,7 @@ void loop() {
 			dailyrainin = 0;
 		}
 
-		//digitalWrite(PUSH_PIN, LOW);
+		digitalWrite(PUSH_PIN, LOW);
 	}
 
 
@@ -819,8 +808,18 @@ void loop() {
 
 		if(sec == 0 && min == 0 && hour == 0 && SYNC_ALLOW == true)
 		{
-			SYNC_ALLOW == false;
+			SYNC_ALLOW = false;
 			sync();
+		}
+	#endif
+
+	#ifdef XBEE
+		if(min%XBEE_CHECK == 0 && sec == 0 && XBEE_CHECK_ALLOW == true)
+		{
+			XBEE_CHECK_ALLOW = false;
+			XBEE_RECV();
+			push(XBEE_CSV());			
+			XBEE_ATTACH(-404,0,-404,0,0);
 		}
 	#endif
 }

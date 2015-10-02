@@ -104,6 +104,9 @@
 	/* 0 : Base Station
 	 * 1 : Node
 	 */
+	#define XBEE_DATA_LEN 2
+
+	#define XBEE_CHECK 15 //min how often the XBEE will check for incomming connections.
 	#define XBEE_TIMEOUT 5000
 
 #endif
