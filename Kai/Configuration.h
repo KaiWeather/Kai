@@ -101,14 +101,14 @@
 #define CAPTURE_INTERVAL 5000 //ms - how long till the next time it will capture new sensor data
 
 //Uncomment which sensors to enable
-//#define RAIN_FALL 12 // Leo use 8, Mega use D12 (Pinchangeint)
+#define RAIN_FALL 12 // Leo use 8, Mega use D12 (Pinchangeint)
 #define WIND_SPEED A5
 #define WIND_DIRECTION A0
 #define HUMID_HTU
-//#define WATER_TEMP 4
-//#define WATER_DEPTH A3    //Water Depth have two values one for the data and another for a referance
-//#define WATER_DEPTH_REF A4
-//#define WATER_FLOW
+#define WATER_TEMP 4
+#define WATER_DEPTH A3    //Water Depth have two values one for the data and another for a referance
+#define WATER_DEPTH_REF A4
+#define WATER_FLOW
 
 //Include any custom sensors here
 
